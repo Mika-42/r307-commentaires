@@ -43,7 +43,7 @@ npm install
 npm start
 ```
 
-4. Dans un second terminal : `npm run verifier`. Avec le côté base terminé : **14 / 31**.
+4. Dans un second terminal, lancez `npm run verifier` sur la base de développement. Le résultat attendu est **31 / 31**.
 
 ## 4. Le travail
 
