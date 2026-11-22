@@ -31,5 +31,3 @@ Le côté PostgreSQL est terminé. Le vérificateur affiche **14/31** à ce stad
 - [`CONTRAT.md`](CONTRAT.md) décrit les six routes et les signatures du service.
 - [`sql/requetes.sql`](sql/requetes.sql) contient les six requêtes du TP et leurs résultats sur les données de départ.
 - [`services/commentaires.service.js`](services/commentaires.service.js) contient l’accès aux commentaires via le pool PostgreSQL partagé.
-
-**Jarod BOUJU** · Groupe B1
