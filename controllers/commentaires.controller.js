@@ -1,13 +1,34 @@
-// CONTROLEUR des commentaires.
-// A ECRIRE : une fonction (req, res, next) par route de CONTRAT.md, comme dans
-// controllers/articles.controller.js :
-//   1. lire req.params, req.query, req.body ;
-//   2. verifier la forme : 400 si un champ obligatoire manque ;
-//   3. appeler le service (services/commentaires.service.js) ;
-//   4. choisir le code (200, 201 ou 204). Toute erreur part vers next(err).
-// Le controleur ne parle JAMAIS a la base : pas de pool ici, seulement le service.
+// Le contrôleur traduit les requêtes HTTP en appels au service des commentaires.
+const service = require('../services/commentaires.service');
+const ErreurHttp = require('../utils/erreur-http');
 
-// const service = require('../services/commentaires.service');
-// const ErreurHttp = require('../utils/erreur-http');
+const texteRenseigne = (valeur) => typeof valeur === 'string' && valeur.trim().length > 0;
 
-module.exports = {};
+// GET /api/articles/:id/commentaires
+function lister(req, res, next) {
+  const articleId = Number(req.params.id);
+  return service.lister(articleId)
+    .then((commentaires) => res.json(commentaires))
+    .catch(next);
+}
+
+// GET /api/commentaires?nom=Claire
+function parVisiteur(req, res, next) {
+  const { nom } = req.query;
+  if (!texteRenseigne(nom)) {
+    return next(new ErreurHttp(400, 'NOM_MANQUANT', 'Indiquez le nom du visiteur.'));
+  }
+  return service.parVisiteur(nom)
+    .then((commentaires) => res.json(commentaires))
+    .catch(next);
+}
+
+// GET /api/commentaires/:id
+function trouver(req, res, next) {
+  const id = Number(req.params.id);
+  return service.trouver(id)
+    .then((commentaire) => res.json(commentaire))
+    .catch(next);
+}
+
+module.exports = { lister, parVisiteur, trouver };
