@@ -9,8 +9,10 @@ router.get('/articles/:id/commentaires', controleur.lister);
 router.get('/commentaires', controleur.parVisiteur);
 router.get('/commentaires/:id', controleur.trouver);
 
-// La création est ouverte aux visiteurs. La modification et la suppression sont réservées à l’administration.
+// Dans serveur.js, ce routeur précède celui des articles pour garder le POST public.
 router.post('/articles/:id/commentaires', controleur.creer);
+
+// Le jeton est vérifié avant d'appeler le contrôleur sur les deux routes d'administration.
 router.patch('/commentaires/:id', verifierJeton, controleur.modifier);
 router.delete('/commentaires/:id', verifierJeton, controleur.supprimer);
 
