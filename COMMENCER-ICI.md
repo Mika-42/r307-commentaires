@@ -33,17 +33,17 @@ Les autres acceptent l'invitation, puis `git clone URL-DU-DEPOT`.
 
 ## 3. Lancer le projet (chacun sur sa machine)
 
-1. Dans pgAdmin : la base **ateliers**, avec `db/ateliers.sql` exécuté (six articles).
+1. Dans pgAdmin, créez la base **ateliers**, puis exécutez `db/ateliers.sql` (six articles)
+   et ensuite `sql/commentaires.sql` (huit commentaires de départ).
 2. Copier `.env.exemple` en `.env`, mettre **votre** mot de passe PostgreSQL dans `PGPASSWORD`.
 3. Dans le terminal :
 
 ```
 npm install
-npm run reinitialiser
 npm start
 ```
 
-4. Dans un second terminal : `npm run verifier`. Au départ : **5 / 31**.
+4. Dans un second terminal : `npm run verifier`. Avec le côté base terminé : **14 / 31**.
 
 ## 4. Le travail
 
@@ -67,7 +67,8 @@ Chacun ses fichiers. Avant de commencer : `git pull --no-edit`. Dès qu'une chos
 ## Remettre la base à zéro
 
 Relancer `db/ateliers.sql` remet les six articles, et **efface aussi la table `commentaires`** :
-relancez ensuite `sql/commentaires.sql`.
+relancez ensuite `sql/commentaires.sql`. Pour remettre seulement les commentaires à zéro,
+relancez `sql/commentaires.sql` seul. Ces scripts remplacent les données de travail correspondantes.
 
 ## Rendre
 

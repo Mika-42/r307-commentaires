@@ -1,64 +1,86 @@
-// SERVICE des commentaires · VERSION FICHIER JSON (celle de depart).
-// Elle respecte le contrat (CONTRAT.md) : le cote API peut s'en servir tout de suite pour tester
-// ses routes. Le cote base la remplace par une version PostgreSQL, avec les MEMES fonctions.
-// Les articles, eux, sont deja dans PostgreSQL (services/articles.service.js).
-
-const fs = require('fs/promises');
-const path = require('path');
+// Service des commentaires : mêmes fonctions que la version JSON, avec le pool partagé.
+const pool = require('../db/pool');
 const ErreurHttp = require('../utils/erreur-http');
 const articles = require('./articles.service');
 
-const FICHIER = path.join(__dirname, '..', 'data', 'commentaires.json');
-const lire = async () => JSON.parse(await fs.readFile(FICHIER, 'utf8'));
-const ecrire = (liste) => fs.writeFile(FICHIER, JSON.stringify(liste, null, 2));
-const introuvable = (id) => new ErreurHttp(404, 'COMMENTAIRE_INTROUVABLE', `Le commentaire ${id} n'existe pas.`);
+const articleIntrouvable = (id) =>
+  new ErreurHttp(404, 'ARTICLE_INTROUVABLE', `L'article ${id} n'existe pas.`);
+const commentaireIntrouvable = (id) =>
+  new ErreurHttp(404, 'COMMENTAIRE_INTROUVABLE', `Le commentaire ${id} n'existe pas.`);
+
+// Les identifiants sont des entiers positifs dans la plage du type INT de PostgreSQL.
+const idValide = (id) => Number.isInteger(id) && id >= 1 && id <= 2_147_483_647;
+
+// pg renvoie un objet Date pour TIMESTAMPTZ. Le contrat attend une chaîne UTC.
+const avecDateIso = (ligne) => ({ ...ligne, cree_le: ligne.cree_le.toISOString() });
 
 async function lister(articleId) {
-  await articles.trouver(articleId); // 404 si l'article n'existe pas
-  const tous = await lire();
-  return tous.filter((c) => c.article_id === articleId).sort((a, b) => a.cree_le.localeCompare(b.cree_le));
+  if (!idValide(articleId)) throw articleIntrouvable(articleId);
+  // Une liste vide est valable si l'article existe.
+  await articles.trouver(articleId);
+  const { rows } = await pool.query(
+    `SELECT id, article_id, nom, texte, cree_le
+     FROM commentaires WHERE article_id = $1
+     ORDER BY cree_le ASC, id ASC`,
+    [articleId],
+  );
+  return rows.map(avecDateIso);
 }
 
 async function trouver(id) {
-  const commentaire = (await lire()).find((c) => c.id === id);
-  if (!commentaire) throw introuvable(id);
-  return commentaire;
+  if (!idValide(id)) throw commentaireIntrouvable(id);
+  const { rows } = await pool.query(
+    'SELECT id, article_id, nom, texte, cree_le FROM commentaires WHERE id = $1',
+    [id],
+  );
+  if (!rows[0]) throw commentaireIntrouvable(id);
+  return avecDateIso(rows[0]);
 }
 
 async function parVisiteur(nom) {
-  const siens = (await lire()).filter((c) => c.nom === nom).sort((a, b) => b.cree_le.localeCompare(a.cree_le));
-  const resultat = [];
-  for (const c of siens) {
-    const article = await articles.trouver(c.article_id);
-    resultat.push({ id: c.id, article_id: c.article_id, titre: article.titre, texte: c.texte, cree_le: c.cree_le });
-  }
-  return resultat;
+  const { rows } = await pool.query(
+    `SELECT c.id, c.article_id, c.nom, c.texte, c.cree_le, a.titre
+     FROM commentaires AS c JOIN articles AS a ON a.id = c.article_id
+     WHERE c.nom = $1
+     ORDER BY c.cree_le DESC, c.id DESC`,
+    [nom],
+  );
+  return rows.map(avecDateIso);
 }
 
 async function creer(articleId, { nom, texte }) {
-  await articles.trouver(articleId);
-  const tous = await lire();
-  const id = tous.length === 0 ? 1 : Math.max(...tous.map((c) => c.id)) + 1;
-  const commentaire = { id, article_id: articleId, nom, texte, cree_le: new Date().toISOString() };
-  tous.push(commentaire);
-  await ecrire(tous);
-  return commentaire;
+  if (!idValide(articleId)) throw articleIntrouvable(articleId);
+  try {
+    const { rows } = await pool.query(
+      `INSERT INTO commentaires (article_id, nom, texte) VALUES ($1, $2, $3)
+       RETURNING id, article_id, nom, texte, cree_le`,
+      [articleId, nom, texte],
+    );
+    return avecDateIso(rows[0]);
+  } catch (err) {
+    // La clé étrangère vérifie l'article au moment de l'INSERT.
+    if (err.code === '23503' && err.constraint === 'commentaires_article_fk') {
+      throw articleIntrouvable(articleId);
+    }
+    throw err;
+  }
 }
 
 async function modifier(id, { texte }) {
-  const tous = await lire();
-  const commentaire = tous.find((c) => c.id === id);
-  if (!commentaire) throw introuvable(id);
-  commentaire.texte = texte;
-  await ecrire(tous);
-  return commentaire;
+  if (!idValide(id)) throw commentaireIntrouvable(id);
+  const { rows } = await pool.query(
+    `UPDATE commentaires SET texte = $2 WHERE id = $1
+     RETURNING id, article_id, nom, texte, cree_le`,
+    [id, texte],
+  );
+  if (!rows[0]) throw commentaireIntrouvable(id);
+  return avecDateIso(rows[0]);
 }
 
 async function supprimer(id) {
-  const tous = await lire();
-  const restants = tous.filter((c) => c.id !== id);
-  if (restants.length === tous.length) throw introuvable(id);
-  await ecrire(restants);
+  if (!idValide(id)) throw commentaireIntrouvable(id);
+  const { rowCount } = await pool.query('DELETE FROM commentaires WHERE id = $1', [id]);
+  if (rowCount === 0) throw commentaireIntrouvable(id);
 }
 
 module.exports = { lister, trouver, parVisiteur, creer, modifier, supprimer };
