@@ -1,6 +1,6 @@
 # R307 · Les commentaires des Ateliers du Bois
 
-Exercice de la séance 1 du module R307. Le projet utilise Node.js, Express et PostgreSQL. L’API liste les articles des Ateliers du Bois. Le service des commentaires utilise le module `pg` pour lire et écrire dans PostgreSQL.
+Exercice de la séance 1 du module R307. L’API des Ateliers du Bois permet de consulter les articles et leurs commentaires, et de publier un commentaire. La modification et la suppression des commentaires demandent le jeton d’administration. Le projet utilise Node.js, Express et PostgreSQL via le module `pg`.
 
 ## Démarrage local
 
@@ -24,7 +24,7 @@ curl -fsS http://localhost:3000/api/articles
 npm run verifier
 ```
 
-Le côté PostgreSQL est terminé. Le vérificateur affiche **14/31** à ce stade. Le score attendu après intégration des routes et du contrôleur des commentaires est **31/31**.
+Avec les données de départ, le vérificateur doit afficher **31/31**. Exécutez-le sur une base de développement, car il crée et supprime des données de test.
 
 ## Fichiers de référence
 

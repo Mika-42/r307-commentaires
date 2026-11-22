@@ -1,9 +1,8 @@
 // Le point d'entree. Il assemble, il ne traite rien.
 // L'ordre des app.use est l'ordre que suit chaque requete, de haut en bas.
 //
-//    1. la base ateliers existe, db/ateliers.sql y a ete execute (voir COMMENCER-ICI.md)
-//    2. npm run reinitialiser   (une fois : cree data/commentaires.json)
-//    3. npm start
+// Dans la base ateliers, executer db/ateliers.sql, puis sql/commentaires.sql.
+// Configurer .env pour la connexion et le jeton d'administration, puis lancer npm start.
 
 const express = require('express');
 const cors = require('cors');
