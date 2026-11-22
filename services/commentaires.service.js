@@ -1,4 +1,5 @@
 // Service des commentaires : mêmes fonctions que la version JSON, avec le pool partagé.
+// Les valeurs fournies par les visiteurs sont transmises à pg dans le tableau des paramètres.
 const pool = require('../db/pool');
 const ErreurHttp = require('../utils/erreur-http');
 const articles = require('./articles.service');
@@ -16,8 +17,9 @@ const avecDateIso = (ligne) => ({ ...ligne, cree_le: ligne.cree_le.toISOString()
 
 async function lister(articleId) {
   if (!idValide(articleId)) throw articleIntrouvable(articleId);
-  // Une liste vide est valable si l'article existe.
+  // Vérifier l'article permet de distinguer une liste vide d'un article introuvable.
   await articles.trouver(articleId);
+  // L'identifiant départage les commentaires qui ont la même date.
   const { rows } = await pool.query(
     `SELECT id, article_id, nom, texte, cree_le
      FROM commentaires WHERE article_id = $1
@@ -51,6 +53,7 @@ async function parVisiteur(nom) {
 async function creer(articleId, { nom, texte }) {
   if (!idValide(articleId)) throw articleIntrouvable(articleId);
   try {
+    // RETURNING récupère la ligne créée, avec l'identifiant et la date attribués par PostgreSQL.
     const { rows } = await pool.query(
       `INSERT INTO commentaires (article_id, nom, texte) VALUES ($1, $2, $3)
        RETURNING id, article_id, nom, texte, cree_le`,

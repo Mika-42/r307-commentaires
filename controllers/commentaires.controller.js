@@ -1,11 +1,14 @@
 // Le contrôleur traduit les requêtes HTTP en appels au service des commentaires.
+// next transmet les erreurs au gestionnaire commun qui produit la réponse JSON.
 const service = require('../services/commentaires.service');
 const ErreurHttp = require('../utils/erreur-http');
 
+// trim sert à repérer les valeurs blanches. Le service reçoit la chaîne d'origine.
 const texteRenseigne = (valeur) => typeof valeur === 'string' && valeur.trim().length > 0;
 
 // GET /api/articles/:id/commentaires
 function lister(req, res, next) {
+  // Express fournit l'identifiant sous forme de chaîne. Le service valide ensuite l'entier.
   const articleId = Number(req.params.id);
   return service.lister(articleId)
     .then((commentaires) => res.json(commentaires))
@@ -14,6 +17,7 @@ function lister(req, res, next) {
 
 // GET /api/commentaires?nom=Claire
 function parVisiteur(req, res, next) {
+  // Un paramètre répété arrive sous forme de tableau. La recherche attend un seul nom.
   const { nom } = req.query;
   if (!texteRenseigne(nom)) {
     return next(new ErreurHttp(400, 'NOM_MANQUANT', 'Indiquez le nom du visiteur.'));
@@ -46,6 +50,7 @@ function creer(req, res, next) {
 // PATCH /api/commentaires/:id
 function modifier(req, res, next) {
   const id = Number(req.params.id);
+  // Le contrat limite cette modification au texte du commentaire.
   const { texte } = req.body || {};
   if (!texteRenseigne(texte)) {
     return next(new ErreurHttp(400, 'TEXTE_MANQUANT', 'Le champ texte est obligatoire.'));
