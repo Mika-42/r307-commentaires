@@ -31,4 +31,36 @@ function trouver(req, res, next) {
     .catch(next);
 }
 
-module.exports = { lister, parVisiteur, trouver };
+// POST /api/articles/:id/commentaires
+function creer(req, res, next) {
+  const articleId = Number(req.params.id);
+  const { nom, texte } = req.body || {};
+  if (!texteRenseigne(nom) || !texteRenseigne(texte)) {
+    return next(new ErreurHttp(400, 'CHAMP_MANQUANT', 'Les champs nom et texte sont obligatoires.'));
+  }
+  return service.creer(articleId, { nom, texte })
+    .then((commentaire) => res.status(201).json(commentaire))
+    .catch(next);
+}
+
+// PATCH /api/commentaires/:id
+function modifier(req, res, next) {
+  const id = Number(req.params.id);
+  const { texte } = req.body || {};
+  if (!texteRenseigne(texte)) {
+    return next(new ErreurHttp(400, 'TEXTE_MANQUANT', 'Le champ texte est obligatoire.'));
+  }
+  return service.modifier(id, { texte })
+    .then((commentaire) => res.json(commentaire))
+    .catch(next);
+}
+
+// DELETE /api/commentaires/:id
+function supprimer(req, res, next) {
+  const id = Number(req.params.id);
+  return service.supprimer(id)
+    .then(() => res.status(204).end())
+    .catch(next);
+}
+
+module.exports = { lister, parVisiteur, trouver, creer, modifier, supprimer };
